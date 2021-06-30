@@ -7,6 +7,8 @@ import time
 from pathlib import Path
 from warnings import warn
 
+import wandb
+
 import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
