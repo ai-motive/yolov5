@@ -53,7 +53,7 @@ except Exception as e:
     print(" @ Warning in getting screen width and height...\n")
 '''
 
-if sys.platform == 'darwin':
+if sys.platform == "darwin":
     screen_width = 1440
     screen_height = 900
 else:
@@ -69,27 +69,36 @@ YELLOW = (255, 255, 0)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tif', 'tiff']
-PDF_EXTENSIONS = ['pdf']
-VIDEO_EXTENSIONS = ['mp4', 'avi', 'mkv']
-AUDIO_EXTENSIONS = ['mp3']
-META_EXTENSION = ['json']
+IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "gif", "tif", "tiff"]
+PDF_EXTENSIONS = ["pdf"]
+VIDEO_EXTENSIONS = ["mp4", "avi", "mkv"]
+AUDIO_EXTENSIONS = ["mp3"]
+META_EXTENSION = ["json"]
 IMG_EXTENSIONS = IMAGE_EXTENSIONS
-LATEX_EXTENSIONS = ['tex']
-TEXT_EXTENSIONS = ['txt']
-CSV_EXTENSIONS = ['csv']
+LATEX_EXTENSIONS = ["tex"]
+TEXT_EXTENSIONS = ["txt"]
+CSV_EXTENSIONS = ["csv"]
 
 COLOR_ARRAY_RGBCMY = [RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW]
-DEV_NULL = open(os.devnull, 'w')
+DEV_NULL = open(os.devnull, "w")
 COLORS = COLOR_ARRAY_RGBCMY
 
 
 class LoggerWrapper:
-    def debug(self): pass
-    def verbose(self): pass
-    def warning(self): pass
-    def info(self): pass
-    def error(self): pass
+    def debug(self):
+        pass
+
+    def verbose(self):
+        pass
+
+    def warning(self):
+        pass
+
+    def info(self):
+        pass
+
+    def error(self):
+        pass
 
 
 def read_pdf(pdf_filename, resolution=300):
@@ -99,9 +108,9 @@ def read_pdf(pdf_filename, resolution=300):
     :param resolution:
     :return img:
     """
-    img_filename = 'temp.bmp'
-    convert_pdf_to_img(pdf_filename, 'bmp', img_filename, resolution=resolution)
-    img = imread(img_filename, color_fmt='RGB')
+    img_filename = "temp.bmp"
+    convert_pdf_to_img(pdf_filename, "bmp", img_filename, resolution=resolution)
+    img = imread(img_filename, color_fmt="RGB")
     os.remove(img_filename)
     return img
 
@@ -115,13 +124,14 @@ def convert_pdf_to_img(pdf_filename, img_type, img_filename, resolution=300):
     :param resolution:
     :return img_filename:
     """
-    if os.name == 'nt':
+    if os.name == "nt":
         print(" @ Error: Wand library does not work in Windows OS\n")
         sys.exit()
     else:
         from wand.image import Image
+
         with Image(filename=pdf_filename, resolution=resolution) as img:
-            img.compression = 'no'
+            img.compression = "no"
             with img.convert(img_type) as converted:
                 converted.save(filename=img_filename)
         return img_filename
@@ -133,13 +143,13 @@ def is_string_nothing(string):
     :param string:
     :return:
     """
-    if string == '' or string is None:
+    if string == "" or string is None:
         return True
     else:
         return False
 
 
-def imread(img_file, color_fmt='RGB'):
+def imread(img_file, color_fmt="RGB"):
     """
     Read image file.
     Support gif and pdf format.
@@ -163,33 +173,33 @@ def imread(img_file, color_fmt='RGB'):
         print(" @ Error: image file not found {}".format(img_file))
         return None
 
-    if not (color_fmt == 'RGB' or color_fmt == 'BGR' or color_fmt == 'GRAY'):
-        color_fmt = 'RGB'
+    if not (color_fmt == "RGB" or color_fmt == "BGR" or color_fmt == "GRAY"):
+        color_fmt = "RGB"
 
-    if img_file.split('.')[-1] == 'gif':
+    if img_file.split(".")[-1] == "gif":
         gif = cv2.VideoCapture(img_file)
         ret, img = gif.read()
         if not ret:
             return None
-    elif img_file.split('.')[-1] == 'pdf':
+    elif img_file.split(".")[-1] == "pdf":
         img = read_pdf(img_file, resolution=300)
     else:
         # img = cv2.imread(img_file.encode('utf-8'))
         # img = cv2.imread(img_file)
         # img = np.array(Image.open(img_file.encode('utf-8')).convert('RGB'), np.uint8)
-        img = np.array(Image.open(img_file).convert('RGB'), np.uint8)
+        img = np.array(Image.open(img_file).convert("RGB"), np.uint8)
     if img is None:
         return None
 
-    if color_fmt.upper() == 'GRAY':
+    if color_fmt.upper() == "GRAY":
         return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    elif color_fmt.upper() == 'BGR':
+    elif color_fmt.upper() == "BGR":
         return cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     else:
         return img
 
 
-def imwrite(img, img_fname, color_fmt='RGB', print_=False):
+def imwrite(img, img_fname, color_fmt="RGB", print_=False):
     """
     Write image file.
     :param img:
@@ -199,13 +209,13 @@ def imwrite(img, img_fname, color_fmt='RGB', print_=False):
     :return img:
     """
     if len(img.shape) == 2:
-        color_fmt = 'GRAY'
+        color_fmt = "GRAY"
 
-    if color_fmt == 'RGB':
+    if color_fmt == "RGB":
         tar = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    elif color_fmt == 'GRAY':
+    elif color_fmt == "GRAY":
         tar = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-    elif color_fmt == 'BGR':
+    elif color_fmt == "BGR":
         tar = img[:]
     else:
         print(" @ Error: color_fmt, {}, is not correct.".format(color_fmt))
@@ -258,7 +268,7 @@ def imresize(img, width=None, height=None, interpolation=cv2.INTER_CUBIC):
     return cv2.resize(img, (width, height), interpolation)
 
 
-def imresize_to_screen(img, factor=1.):
+def imresize_to_screen(img, factor=1.0):
     """
     Resize to screen size.
     :param img:
@@ -275,17 +285,14 @@ def imresize_to_screen(img, factor=1.):
     if h <= 0 or w <= 0:
         zoom_w, zoom_h = 1, 1
     else:
-        zoom_w = screen_width / float(w) * 9 / 10. * factor
-        zoom_h = screen_height / float(h) * 9 / 10. * factor
+        zoom_w = screen_width / float(w) * 9 / 10.0 * factor
+        zoom_h = screen_height / float(h) * 9 / 10.0 * factor
     zoom = min(zoom_h, zoom_w)
 
     return cv2.resize(img, (0, 0), fx=zoom, fy=zoom), zoom
 
 
-def read_all_images(img_dir,
-                    prefix='',
-                    exts=None,
-                    color_fmt='RGB'):
+def read_all_images(img_dir, prefix="", exts=None, color_fmt="RGB"):
     """
     Read all images with specific filename prefix in an image directory.
     :param img_dir:
@@ -309,16 +316,13 @@ def read_all_images(img_dir,
             imgs.append(img)
 
     if not imgs:
-        print(" @ Error: no image filename rting with \"{}\"...".format(prefix))
+        print(' @ Error: no image filename rting with "{}"...'.format(prefix))
         sys.exit()
 
     return imgs
 
 
-def imread_all_images(img_path,
-                      fname_prefix='',
-                      img_extensions=None,
-                      color_fmt='RGB'):
+def imread_all_images(img_path, fname_prefix="", img_extensions=None, color_fmt="RGB"):
     """
     Read all images in the specific folder.
     :param img_path:
@@ -351,7 +355,9 @@ def imread_all_images(img_path,
     return imgs, img_filenames
 
 
-def imshow(img, desc='imshow', zoom=1.0, color_fmt='RGB', skip=False, pause_sec=0, loc=(64, 64)):
+def imshow(
+    img, desc="imshow", zoom=1.0, color_fmt="RGB", skip=False, pause_sec=0, loc=(64, 64)
+):
     """
     Show image.
     :param img:
@@ -373,15 +379,15 @@ def imshow(img, desc='imshow', zoom=1.0, color_fmt='RGB', skip=False, pause_sec=
 
     if len(img.shape) == 2:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-    elif len(img.shape) == 3 and color_fmt == 'RGB':
+    elif len(img.shape) == 3 and color_fmt == "RGB":
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
     # def get_full_zoom_factor(img, zoom=0.0, factor=4/5., skip_=False):
 
     dim = img.shape
     h, w = dim[0], dim[1]
-    zoom_w = screen_width / float(w) * 8 / 10.
-    zoom_h = screen_height / float(h) * 8 / 10.
+    zoom_w = screen_width / float(w) * 8 / 10.0
+    zoom_h = screen_height / float(h) * 8 / 10.0
 
     if zoom == 0:
         zoom = min(zoom_h, zoom_w)
@@ -392,9 +398,13 @@ def imshow(img, desc='imshow', zoom=1.0, color_fmt='RGB', skip=False, pause_sec=
 
     resize_img = cv2.resize(img, (0, 0), fx=zoom, fy=zoom)
 
-    if os.environ.get('XSERVER'):
-        if os.environ['XSERVER'] == 'False':
-            imwrite(resize_img, os.path.join(os.environ['HOME'], "Download", "imwrite.jpg"), color_fmt='BGR')
+    if os.environ.get("XSERVER"):
+        if os.environ["XSERVER"] == "False":
+            imwrite(
+                resize_img,
+                os.path.join(os.environ["HOME"], "Download", "imwrite.jpg"),
+                color_fmt="BGR",
+            )
             print("imwrite instead of imshow")
             return
 
@@ -437,19 +447,32 @@ def crop_roi(img, roi, imshow_sec=-1):
     if roi_mod[2][0] > roi_mod[3][0]:
         roi_mod[2], roi_mod[3] = roi_mod[3], roi_mod[2]
 
-    cnr_mod = [[min(roi_mod[0][0], roi_mod[2][0]), min(roi_mod[0][1], roi_mod[1][1])],
-               [max(roi_mod[1][0], roi_mod[3][0]), max(roi_mod[2][1], roi_mod[3][1])]]
-    roi_mod = [[cnr_mod[0][0] - roi_mod[0][0], cnr_mod[0][1] - roi_mod[0][1]],
-               [cnr_mod[1][0] - roi_mod[1][0], cnr_mod[0][1] - roi_mod[1][1]],
-               [cnr_mod[0][0] - roi_mod[2][0], cnr_mod[1][1] - roi_mod[2][1]],
-               [cnr_mod[1][0] - roi_mod[3][0], cnr_mod[1][1] - roi_mod[3][1]]]
+    cnr_mod = [
+        [min(roi_mod[0][0], roi_mod[2][0]), min(roi_mod[0][1], roi_mod[1][1])],
+        [max(roi_mod[1][0], roi_mod[3][0]), max(roi_mod[2][1], roi_mod[3][1])],
+    ]
+    roi_mod = [
+        [cnr_mod[0][0] - roi_mod[0][0], cnr_mod[0][1] - roi_mod[0][1]],
+        [cnr_mod[1][0] - roi_mod[1][0], cnr_mod[0][1] - roi_mod[1][1]],
+        [cnr_mod[0][0] - roi_mod[2][0], cnr_mod[1][1] - roi_mod[2][1]],
+        [cnr_mod[1][0] - roi_mod[3][0], cnr_mod[1][1] - roi_mod[3][1]],
+    ]
 
-    crop_img = img[cnr_mod[0][1]:cnr_mod[1][1], cnr_mod[0][0]:cnr_mod[1][0]]
+    crop_img = img[cnr_mod[0][1] : cnr_mod[1][1], cnr_mod[0][0] : cnr_mod[1][0]]
     if imshow_sec >= 0:
         hstack_img = hstack_images(
-            (draw_quadrilateral_on_image(img.copy(), roi, color=RED, thickness=4, clockwise_=False), crop_img))
-        imshow(hstack_img, desc="crop_img: {} -> {}".format(img.shape[1::-1], crop_img.shape[1::-1]),
-               pause_sec=imshow_sec)
+            (
+                draw_quadrilateral_on_image(
+                    img.copy(), roi, color=RED, thickness=4, clockwise_=False
+                ),
+                crop_img,
+            )
+        )
+        imshow(
+            hstack_img,
+            desc="crop_img: {} -> {}".format(img.shape[1::-1], crop_img.shape[1::-1]),
+            pause_sec=imshow_sec,
+        )
 
     # roi_corners = np.array([[tuple(x) for x in roi_mod]],dtype=np.int32)
     # ignore_mask_color = (255,) * crop_img.shape[2]
@@ -479,7 +502,7 @@ def draw_line_by_equation(img, slope, sect, color=RED, thickness=3):
         pts.append([0, int(sect)])
         pts.append([dim[1] - 1, int(sect)])
     else:
-        top_sect = int(- sect / slope)
+        top_sect = int(-sect / slope)
         bot_sect = int(dim[0] - sect / slope)
         left_sect = int(sect)
         right_sect = int(slope * dim[1] + sect)
@@ -515,18 +538,16 @@ def draw_box_on_img(img, box, color=RED, thickness=2, alpha=0.5):
         box = [box[0][0], box[0][1], box[3][0], box[3][1]]
 
     box = [int(v) for v in box]
-    box_img = cv2.rectangle(deepcopy(img), tuple(box[0:2]), tuple(box[2:]), color, thickness)
+    box_img = cv2.rectangle(
+        deepcopy(img), tuple(box[0:2]), tuple(box[2:]), color, thickness
+    )
     box_img = cv2.addWeighted(img, alpha, box_img, 1 - alpha, 0)
     return box_img
 
 
-def draw_boxes_on_img(img,
-                      boxes,
-                      color=RED,
-                      thickness=2,
-                      alpha=0.,
-                      margin=0,
-                      add_cross_=False):
+def draw_boxes_on_img(
+    img, boxes, color=RED, thickness=2, alpha=0.0, margin=0, add_cross_=False
+):
     """
     Draw the overlay of boxes to an image.
     box format is either 2 or 4 vertex points.
@@ -542,7 +563,7 @@ def draw_boxes_on_img(img,
     margins = [x * margin for x in [-1, -1, 1, 1]]
 
     if isinstance(color, str):
-        if color.lower() == 'random':
+        if color.lower() == "random":
             box_color = -1
         else:
             box_color = RED
@@ -565,10 +586,24 @@ def draw_boxes_on_img(img,
         else:
             mod_color = box_color
         mod_box = list(map(operator.add, box, margins))
-        box_img = cv2.rectangle(box_img, tuple(mod_box[0:2]), tuple(mod_box[2:]), mod_color, thickness)
+        box_img = cv2.rectangle(
+            box_img, tuple(mod_box[0:2]), tuple(mod_box[2:]), mod_color, thickness
+        )
         if add_cross_:
-            box_img = cv2.line(box_img, (mod_box[0], mod_box[1]), (mod_box[2], mod_box[3]), color=BLACK, thickness=8)
-            box_img = cv2.line(box_img, (mod_box[2], mod_box[1]), (mod_box[0], mod_box[3]), color=BLACK, thickness=8)
+            box_img = cv2.line(
+                box_img,
+                (mod_box[0], mod_box[1]),
+                (mod_box[2], mod_box[3]),
+                color=BLACK,
+                thickness=8,
+            )
+            box_img = cv2.line(
+                box_img,
+                (mod_box[2], mod_box[1]),
+                (mod_box[0], mod_box[3]),
+                color=BLACK,
+                thickness=8,
+            )
     disp_img = cv2.addWeighted(np.copy(img), box_alpha, box_img, 1 - box_alpha, 0)
 
     return disp_img
@@ -597,7 +632,9 @@ def get_center_of_mass_from_quad(quad):
     return x / tot_num, y / tot_num
 
 
-def draw_quadrilateral_on_image(img, quad_arr, color=RED, thickness=2, clockwise_=False):
+def draw_quadrilateral_on_image(
+    img, quad_arr, color=RED, thickness=2, clockwise_=False
+):
     """
     Draw a quadrilateral on image.
     This function includes the regularization of quadrilateral vertices.
@@ -619,7 +656,7 @@ def draw_quadrilateral_on_image(img, quad_arr, color=RED, thickness=2, clockwise
 
     for quad in mod_quad_arr:
 
-        '''
+        """
         if quad:
             if isinstance(quad[0], list):
                 mod_quad = np.array(regularize_quadrilateral_vertices(quad), dtype=np.int32)
@@ -632,19 +669,47 @@ def draw_quadrilateral_on_image(img, quad_arr, color=RED, thickness=2, clockwise
             disp_img = cv2.line(disp_img, tuple(mod_quad[0]), tuple(mod_quad[2]), color=color, thickness=thickness)
             disp_img = cv2.line(disp_img, tuple(mod_quad[3]), tuple(mod_quad[1]), color=color, thickness=thickness)
             disp_img = cv2.line(disp_img, tuple(mod_quad[3]), tuple(mod_quad[2]), color=color, thickness=thickness)
-        '''
+        """
         if not isinstance(quad[0], list):
-            mod_quad = [[quad[0], quad[1]], [quad[2], quad[1]],
-                        [quad[0], quad[3]], [quad[2], quad[3]]]
+            mod_quad = [
+                [quad[0], quad[1]],
+                [quad[2], quad[1]],
+                [quad[0], quad[3]],
+                [quad[2], quad[3]],
+            ]
         else:
             mod_quad = quad
         if clockwise_:
             mod_quad[2], mod_quad[3] = mod_quad[3], mod_quad[2]
 
-        disp_img = cv2.line(disp_img, tuple(mod_quad[0]), tuple(mod_quad[1]), color=color, thickness=thickness)
-        disp_img = cv2.line(disp_img, tuple(mod_quad[0]), tuple(mod_quad[2]), color=color, thickness=thickness)
-        disp_img = cv2.line(disp_img, tuple(mod_quad[3]), tuple(mod_quad[1]), color=color, thickness=thickness)
-        disp_img = cv2.line(disp_img, tuple(mod_quad[3]), tuple(mod_quad[2]), color=color, thickness=thickness)
+        disp_img = cv2.line(
+            disp_img,
+            tuple(mod_quad[0]),
+            tuple(mod_quad[1]),
+            color=color,
+            thickness=thickness,
+        )
+        disp_img = cv2.line(
+            disp_img,
+            tuple(mod_quad[0]),
+            tuple(mod_quad[2]),
+            color=color,
+            thickness=thickness,
+        )
+        disp_img = cv2.line(
+            disp_img,
+            tuple(mod_quad[3]),
+            tuple(mod_quad[1]),
+            color=color,
+            thickness=thickness,
+        )
+        disp_img = cv2.line(
+            disp_img,
+            tuple(mod_quad[3]),
+            tuple(mod_quad[2]),
+            color=color,
+            thickness=thickness,
+        )
 
     return disp_img
 
@@ -676,17 +741,22 @@ def crop_image_from_ref_vertex(img, ref_vertex, symm_crop_=True, debug_=False):
     """
     pts = generate_four_vertices_from_ref_vertex(ref_vertex, img.shape[1::-1])
     if symm_crop_:
-        crop_img = img[pts[0][1]:pts[3][1], pts[0][0]:pts[1][0]]
+        crop_img = img[pts[0][1] : pts[3][1], pts[0][0] : pts[1][0]]
     else:
-        crop_img = img[pts[0][1]:pts[3][1], pts[0][0]:img.shape[1]]
+        crop_img = img[pts[0][1] : pts[3][1], pts[0][0] : img.shape[1]]
 
     if debug_:
-        imshow(draw_box_on_img(img, pts, color=RED, thickness=10, alpha=0.5), desc="original image with frame")
+        imshow(
+            draw_box_on_img(img, pts, color=RED, thickness=10, alpha=0.5),
+            desc="original image with frame",
+        )
         imshow(crop_img, desc="cropped image")
     return crop_img
 
 
-def crop_image_by_corners(img, corners, corner_type='zigzag', method='perspective', debug_=False):
+def crop_image_by_corners(
+    img, corners, corner_type="zigzag", method="perspective", debug_=False
+):
     """
     Crop input image with 2 or 4 corners.
     :param img:
@@ -697,33 +767,44 @@ def crop_image_by_corners(img, corners, corner_type='zigzag', method='perspectiv
     :return:
     """
     if np.array(corners).shape == (2, 2):
-        return img[corners[0][1]:corners[1][1], corners[0][0]:corners[1][0]]
+        return img[corners[0][1] : corners[1][1], corners[0][0] : corners[1][0]]
 
-    if method == 'perspective':
+    if method == "perspective":
 
-        if corner_type == 'zigzag':
+        if corner_type == "zigzag":
             src_pts = np.float32([corners[0], corners[1], corners[3], corners[2]])
-        elif corner_type == 'counterclockwise':
+        elif corner_type == "counterclockwise":
             src_pts = np.float32(corners)
         else:
             print(" @ Error: incorrect corner_type, {}.")
             return None
         # tar_pts = np.float32(get_corners2_from_corners4(src_pts, corner_type=corner_type, method='average', margin=0))
-        tar_pts = np.float32(get_corners2_from_corners4(src_pts, method='average', margin=0))
-        tar_pts = np.float32([tar_pts[0], [tar_pts[1][0], tar_pts[0][1]], tar_pts[1], [tar_pts[0][0], tar_pts[1][1]]])
+        tar_pts = np.float32(
+            get_corners2_from_corners4(src_pts, method="average", margin=0)
+        )
+        tar_pts = np.float32(
+            [
+                tar_pts[0],
+                [tar_pts[1][0], tar_pts[0][1]],
+                tar_pts[1],
+                [tar_pts[0][0], tar_pts[1][1]],
+            ]
+        )
         tar_pts -= tar_pts[0]
 
         matrix = cv2.getPerspectiveTransform(src_pts, tar_pts)
         crop_img = cv2.warpPerspective(img, matrix, (tar_pts[2][0], tar_pts[2][1]))
 
         if debug_:
-            cnr_img = draw_quadrilateral_on_image(np.copy(img), corners, color=RED, thickness=4)
+            cnr_img = draw_quadrilateral_on_image(
+                np.copy(img), corners, color=RED, thickness=4
+            )
             imshow(cnr_img, "image with four corners")
             imshow(crop_img, desc="cropped image")
 
         return crop_img
 
-    elif method == 'max_area':
+    elif method == "max_area":
         return None
     else:
         print(" @ Error: incorrect method, {}".format(method))
@@ -757,29 +838,33 @@ def get_datetime(fmt="%Y-%m-%d_%H:%M:%S.%f"):
 
 def setup_logger_with_ini(ini, logging_=True, console_=True):
     backup_count = 0
-    if 'backup_count' in ini:
-        backup_count = int(ini['backup_count'])
+    if "backup_count" in ini:
+        backup_count = int(ini["backup_count"])
 
-    logger = setup_logger(ini['name'],
-                          ini['prefix'],
-                          folder=ini['folder'],
-                          filename=None,  # 'test.log',
-                          backup_count=backup_count,
-                          logger_=logging_,
-                          console_=console_)
+    logger = setup_logger(
+        ini["name"],
+        ini["prefix"],
+        folder=ini["folder"],
+        filename=None,  # 'test.log',
+        backup_count=backup_count,
+        logger_=logging_,
+        console_=console_,
+    )
 
     return logger
 
 
-def setup_logger(logger_name,
-                 log_prefix_name,
-                 level=logging.INFO,
-                 folder='.',
-                 filename=None,
-                 backup_count=0,
-                 logger_=True,
-                 console_=True):
-    """ Setup logger supporting two handlers of stdout and file.
+def setup_logger(
+    logger_name,
+    log_prefix_name,
+    level=logging.INFO,
+    folder=".",
+    filename=None,
+    backup_count=0,
+    logger_=True,
+    console_=True,
+):
+    """Setup logger supporting two handlers of stdout and file.
     :param logger_name:
     :param log_prefix_name:
     :param level:
@@ -802,33 +887,42 @@ def setup_logger(logger_name,
         os.makedirs(folder)
 
     CUSTOM_LEVEL_STYLES = dict(
-        spam=dict(color='green', faint=True),
-        debug=dict(color='green'),
-        verbose=dict(color='blue'),
-        info=dict(color='cyan'),
-        notice=dict(color='magenta'),
-        warning=dict(color='yellow'),
-        success=dict(color='green', bold=True),
-        error=dict(color='red'),
-        critical=dict(color='red', bold=True),
+        spam=dict(color="green", faint=True),
+        debug=dict(color="green"),
+        verbose=dict(color="blue"),
+        info=dict(color="cyan"),
+        notice=dict(color="magenta"),
+        warning=dict(color="yellow"),
+        success=dict(color="green", bold=True),
+        error=dict(color="red"),
+        critical=dict(color="red", bold=True),
     )
 
     # 로거 파일은 사용자가 지정하는 고정적인 파일 이름 대신 date 와 time 으로 구성하는 것이 자동 로거를 구현할때 일반적이다.
     # 이전에 test.log 를 로거 파일 이름으로 설정한 이유는 단순히 테스트를 위한 것이다.
     # 아래에 filename 이 있을 경우와 없을 경우를 나누어서 로거의 파일 이름을 설정하도록 변경한다.
     dt = get_datetime()[:-2].replace(":", "-")
-    log_file = os.path.join(*folder.split('/'), log_prefix_name + dt + '.log') if filename is None else filename
+    log_file = (
+        os.path.join(*folder.split("/"), log_prefix_name + dt + ".log")
+        if filename is None
+        else filename
+    )
     log_setup = logging.getLogger(logger_name)
-    formatter = coloredlogs.ColoredFormatter('%(name)-10s | %(asctime)s.%(msecs)03d | %(levelname)-7s | %(message)s',
-                                             datefmt='%Y-%m-%d %H:%M:%S', level_styles=CUSTOM_LEVEL_STYLES)
+    formatter = coloredlogs.ColoredFormatter(
+        "%(name)-10s | %(asctime)s.%(msecs)03d | %(levelname)-7s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level_styles=CUSTOM_LEVEL_STYLES,
+    )
     # formatter = logging.Formatter('%(name)-10s | %(asctime)s.%(msecs)03d | %(levelname)-7s | %(message)s',
     #                               datefmt='%Y-%m-%d %H:%M:%S')
 
     # log 파일이 무한정 커지는 것을 방지하고, 서버 시작후 부터 일자별로 최대 backup_count(기본=0) 일까지 저장하도록 한다.
     if backup_count > 0:
-        file_handler = log_handlers.TimedRotatingFileHandler(log_file, backupCount=backup_count, when='midnight')
+        file_handler = log_handlers.TimedRotatingFileHandler(
+            log_file, backupCount=backup_count, when="midnight"
+        )
     else:
-        file_handler = logging.FileHandler(log_file, mode='a')
+        file_handler = logging.FileHandler(log_file, mode="a")
 
     file_handler.setFormatter(formatter)
     file_handler.suffix = "%Y%m%d.bak"
@@ -851,7 +945,7 @@ def get_stdout_logger(logger=None):
     return logger
 
 
-def folder_exists(in_dir, type_='rst', exit_=False, create_=False, print_=False):
+def folder_exists(in_dir, type_="rst", exit_=False, create_=False, print_=False):
     """
     Check if a directory exists or not. If not, create it according to input argument.
     :param in_dir:
@@ -870,7 +964,7 @@ def folder_exists(in_dir, type_='rst', exit_=False, create_=False, print_=False)
     else:
         if create_:
             try:
-                #print(in_dir)
+                # print(in_dir)
                 os.makedirs(in_dir)
             except OSError:
                 print(" @ Error: make_dirs in check_directory_existence routine...\n")
@@ -929,16 +1023,18 @@ def transpose_list(in_list):
         return in_list
 
 
-def plt_imshow(data_2d,
-               title=None,
-               x_label=None,
-               y_label=None,
-               x_range=None,
-               y_range=None,
-               xticks=None,
-               yticks=None,
-               maximize_=True,
-               block_=True):
+def plt_imshow(
+    data_2d,
+    title=None,
+    x_label=None,
+    y_label=None,
+    x_range=None,
+    y_range=None,
+    xticks=None,
+    yticks=None,
+    maximize_=True,
+    block_=True,
+):
     """
     Show image via matplotlib.pyplot.
     :param data_2d:
@@ -957,16 +1053,16 @@ def plt_imshow(data_2d,
     maximize_ = maximize_ and False
     if maximize_:
         if os.name == "nt":  # If Windows OS.
-            plt.get_current_fig_manager().window.state('zoomed')
+            plt.get_current_fig_manager().window.state("zoomed")
         else:
             plt.get_current_fig_manager().window.showMaximized()
 
     dim = data_2d.shape
     if len(dim) == 2:
-        plt.imshow(data_2d, cmap='gray')
+        plt.imshow(data_2d, cmap="gray")
     elif len(dim) == 3:
         if dim[2] == 1:
-            plt.imshow(data_2d, cmap='gray')
+            plt.imshow(data_2d, cmap="gray")
         else:
             plt.imshow(data_2d)
 
@@ -1022,7 +1118,9 @@ def vstack_images(imgs, margin=20):
     y_offset = margin
     for img in color_images:
         img_sz = img.shape[1::-1]
-        vck_image[y_offset:y_offset + img_sz[1], x_offset:x_offset + img_sz[0]] = img
+        vck_image[
+            y_offset : y_offset + img_sz[1], x_offset : x_offset + img_sz[0]
+        ] = img
         y_offset += margin + img_sz[1]
 
     return vck_image
@@ -1060,13 +1158,17 @@ def hstack_images(imgs, margin=20):
     y_offset = margin
     for img in color_images:
         img_sz = img.shape[1::-1]
-        hck_image[y_offset:y_offset + img_sz[1], x_offset:x_offset + img_sz[0]] = img
+        hck_image[
+            y_offset : y_offset + img_sz[1], x_offset : x_offset + img_sz[0]
+        ] = img
         x_offset += margin + img_sz[0]
 
     return hck_image
 
 
-def get_filenames(dir_path, prefixes=('',), extensions=('',), recursive_=False, exit_=False):
+def get_filenames(
+    dir_path, prefixes=("",), extensions=("",), recursive_=False, exit_=False
+):
     """
     Find all the files rting with prefixes or ending with extensions in the directory path.
     ${dir_path} argument can accept file.
@@ -1085,12 +1187,14 @@ def get_filenames(dir_path, prefixes=('',), extensions=('',), recursive_=False, 
 
     dir_name = os.path.dirname(dir_path)
 
-    filenames = glob.glob(dir_name + '**/**', recursive=recursive_)
+    filenames = glob.glob(dir_name + "**/**", recursive=recursive_)
     for i in range(len(filenames) - 1, -1, -1):
         basename = os.path.basename(filenames[i])
-        if not (os.path.isfile(filenames[i]) and
-                basename.startswith(tuple(prefixes)) and
-                basename.endswith(tuple(extensions))):
+        if not (
+            os.path.isfile(filenames[i])
+            and basename.startswith(tuple(prefixes))
+            and basename.endswith(tuple(extensions))
+        ):
             del filenames[i]
 
     if len(filenames) == 0:
@@ -1149,15 +1253,15 @@ def get_bool_from_ini(ini_param):
     """
     if not isinstance(ini_param, str):
         return None
-    if ini_param.lower() in ['0', 'off', 'false']:
+    if ini_param.lower() in ["0", "off", "false"]:
         return False
-    elif ini_param.lower() in ['1', 'on', 'true']:
+    elif ini_param.lower() in ["1", "on", "true"]:
         return True
     else:
         return None
 
 
-def remove_comments_in_ini_section(ini_section, cmt_string='###'):
+def remove_comments_in_ini_section(ini_section, cmt_string="###"):
     """
     Remove comments in ini section.
     where comment is the sentence rting the special string combination such as '###'
@@ -1171,7 +1275,7 @@ def remove_comments_in_ini_section(ini_section, cmt_string='###'):
     return ini_out
 
 
-def remove_comments_in_ini(ini, cmt_delimiter='###'):
+def remove_comments_in_ini(ini, cmt_delimiter="###"):
     """
     Remove comments in ini file,
     where comment is text strings rting with comment delimiter.
@@ -1206,16 +1310,16 @@ def copy_folder_structure(src_path, tar_path):
     :param tar_path:
     :return:
     """
-    dir_names = glob.glob(src_path + '**/*/', recursive=True)
+    dir_names = glob.glob(src_path + "**/*/", recursive=True)
     for dir_name in dir_names:
-        tar_name = os.path.join(tar_path, dir_name[len(src_path):])
+        tar_name = os.path.join(tar_path, dir_name[len(src_path) :])
         print(tar_name)
         if not os.path.isdir(tar_name):
             os.makedirs(tar_name)
     return True
 
 
-'''    
+"""    
     for dir_path, dir_names, file_names in os.walk(src_path):
         structure = os.path.join(tar_path, dir_path[len(src_path):])
         if not os.path.isdir(structure):
@@ -1223,7 +1327,7 @@ def copy_folder_structure(src_path, tar_path):
         else:
             print(" % Info : {} folder does already exist...".format(structure))
     return True
-'''
+"""
 
 
 class JsonConvert(object):
@@ -1236,18 +1340,25 @@ class JsonConvert(object):
                 return cl(**d)
         else:
             # Raise exception instead of silently returning None
-            raise ValueError('Unable to find a matching class for object: {!s}'.format(d))
+            raise ValueError(
+                "Unable to find a matching class for object: {!s}".format(d)
+            )
 
     @classmethod
     def complex_handler(cls, obj):
-        if hasattr(obj, '__dict__'):
+        if hasattr(obj, "__dict__"):
             return obj.__dict__
         else:
-            raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
+            raise TypeError(
+                "Object of type %s with value of %s is not JSON serializable"
+                % (type(obj), repr(obj))
+            )
 
     @classmethod
     def register(cls, in_class):
-        cls.mappings[frozenset(tuple([attr for attr, val in cls().__dict__.items()]))] = in_class
+        cls.mappings[
+            frozenset(tuple([attr for attr, val in cls().__dict__.items()]))
+        ] = in_class
         return cls
 
     @classmethod
@@ -1260,13 +1371,13 @@ class JsonConvert(object):
 
     @classmethod
     def to_file(cls, obj, path):
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.writelines([cls.to_json(obj)])
         return path
 
     @classmethod
     def from_file(cls, filepath):
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             result = cls.from_json(f.read())
         return result
 
@@ -1290,7 +1401,7 @@ def is_json(my_json):
         return False
 
 
-def transform_quadrilateral_to_rectangle(quad, algo='max', margin=16):
+def transform_quadrilateral_to_rectangle(quad, algo="max", margin=16):
     """
     Find an appropriate rectangle from quadrilateral.
     NEXT:
@@ -1302,7 +1413,7 @@ def transform_quadrilateral_to_rectangle(quad, algo='max', margin=16):
     """
     if np.array(quad).shape != (4, 2):
         return None
-    if algo == 'max':
+    if algo == "max":
         t = [list(np.amin(quad, axis=0)), list(np.amax(quad, axis=0))]
         x1 = t[0][0] - margin
         y1 = t[0][1] - margin
@@ -1319,10 +1430,10 @@ def unicode_normalize(string):
     if string is None:
         return string
     else:
-        return unicodedata.normalize('NFC', string)
+        return unicodedata.normalize("NFC", string)
 
 
-def compare_image_folders(folder1, folder2, direction='horizontal', pause_sec=0):
+def compare_image_folders(folder1, folder2, direction="horizontal", pause_sec=0):
     """
     Compare image folders
     :param folder1:
@@ -1340,11 +1451,15 @@ def compare_image_folders(folder1, folder2, direction='horizontal', pause_sec=0)
                 img2 = imread(os.path.join(folder2, filename))
             else:
                 img2 = np.zeros(tuple(img1.shape), dtype=np.uint8)
-            if direction == 'horizontal':
+            if direction == "horizontal":
                 img = hstack_images((img1, img2))
             else:
                 img = vstack_images((img1, img2))
-            imshow(img, desc="compare image " + os.path.basename(filename), pause_sec=pause_sec)
+            imshow(
+                img,
+                desc="compare image " + os.path.basename(filename),
+                pause_sec=pause_sec,
+            )
 
 
 def check_range(val, min_val, max_val):
@@ -1356,7 +1471,7 @@ def check_range(val, min_val, max_val):
         return val
 
 
-def recv_all(con, recv_buf_size=1024, timeout_val=60., logger=None):
+def recv_all(con, recv_buf_size=1024, timeout_val=60.0, logger=None):
     """
     Receive files.
     :param con:
@@ -1365,7 +1480,7 @@ def recv_all(con, recv_buf_size=1024, timeout_val=60., logger=None):
     :param logger:
     :return:
     """
-    byte_data = b''
+    byte_data = b""
     data_len_list = None  # [16, 15, 527, 837, 842]
     while True:
         try:
@@ -1406,7 +1521,7 @@ def get_ini_parameters(ini_fname, cmt_delimiter="###"):
     """
     ini = configparser.ConfigParser()
     file_exists(ini_fname, exit_=True)
-    ini.read(ini_fname, encoding='utf-8')
+    ini.read(ini_fname, encoding="utf-8")
     return remove_comments_in_ini(ini, cmt_delimiter=cmt_delimiter)
 
 
@@ -1416,12 +1531,12 @@ def get_rect_size_from_quad(quad):
     :param quad:
     :return:
     """
-    sz_x = ((abs(quad[1][0] - quad[0][0]) + abs(quad[3][0] - quad[2][0])) / 2.)
-    sz_y = ((abs(quad[2][1] - quad[0][1]) + abs(quad[3][1] - quad[1][1])) / 2.)
+    sz_x = (abs(quad[1][0] - quad[0][0]) + abs(quad[3][0] - quad[2][0])) / 2.0
+    sz_y = (abs(quad[2][1] - quad[0][1]) + abs(quad[3][1] - quad[1][1])) / 2.0
     return sz_x, sz_y
 
 
-def get_corners2_from_corners4(corner, method='maximum', margin=0, flatten_=False):
+def get_corners2_from_corners4(corner, method="maximum", margin=0, flatten_=False):
     """
     Convert 2 corners info into 4 corners (coordinates).
     :param corner:
@@ -1438,14 +1553,34 @@ def get_corners2_from_corners4(corner, method='maximum', margin=0, flatten_=Fals
         mod_cnr4[3] = tmp
 
     rect = []
-    if method == 'maximum':
-        rect = [[min(mod_cnr4[0][0], mod_cnr4[2][0]) - margin, min(mod_cnr4[0][1], mod_cnr4[1][1]) - margin],
-                [max(mod_cnr4[1][0], mod_cnr4[3][0]) + margin, max(mod_cnr4[2][1], mod_cnr4[3][1]) + margin]]
-    elif method == 'average':
-        rect = [[(mod_cnr4[0][0] + mod_cnr4[2][0]) / 2 - margin, (mod_cnr4[0][1] + mod_cnr4[1][1]) / 2 - margin],
-                [(mod_cnr4[1][0] + mod_cnr4[3][0]) / 2 + margin, (mod_cnr4[2][1] + mod_cnr4[3][1]) / 2 + margin]]
+    if method == "maximum":
+        rect = [
+            [
+                min(mod_cnr4[0][0], mod_cnr4[2][0]) - margin,
+                min(mod_cnr4[0][1], mod_cnr4[1][1]) - margin,
+            ],
+            [
+                max(mod_cnr4[1][0], mod_cnr4[3][0]) + margin,
+                max(mod_cnr4[2][1], mod_cnr4[3][1]) + margin,
+            ],
+        ]
+    elif method == "average":
+        rect = [
+            [
+                (mod_cnr4[0][0] + mod_cnr4[2][0]) / 2 - margin,
+                (mod_cnr4[0][1] + mod_cnr4[1][1]) / 2 - margin,
+            ],
+            [
+                (mod_cnr4[1][0] + mod_cnr4[3][0]) / 2 + margin,
+                (mod_cnr4[2][1] + mod_cnr4[3][1]) / 2 + margin,
+            ],
+        ]
     else:
-        print(" @ Error in get_corners2_from_corners4 : incorrect method argument, {}.".format(method))
+        print(
+            " @ Error in get_corners2_from_corners4 : incorrect method argument, {}.".format(
+                method
+            )
+        )
 
     if flatten_:
         rect = [rect[0][0], rect[0][1], rect[1][0], rect[1][1]]
@@ -1469,7 +1604,7 @@ def update_image_arr_for_video(img_arr):
     for img in img_arr:
         img_shape = img.shape
         max_img = np.zeros((max_height, max_width, 3), dtype=np.uint8)
-        max_img[0:img_shape[0], 0:img_shape[1]] = img
+        max_img[0 : img_shape[0], 0 : img_shape[1]] = img
         updated_img_arr.append(max_img)
     return updated_img_arr
 
@@ -1488,16 +1623,20 @@ def save_dict_to_json_file(dict_dat, json_fname, logger=get_stdout_logger()):
         logger.info()
 
 
-def get_all_files_in_dir_path(): pass
+def get_all_files_in_dir_path():
+    pass
 
 
-def check_file_existence(): pass
+def check_file_existence():
+    pass
 
 
-def get_random_color(): pass
+def get_random_color():
+    pass
 
 
-def check_directory_existence(): pass
+def check_directory_existence():
+    pass
 
 
 get_all_files_in_dir_path = get_filenames
