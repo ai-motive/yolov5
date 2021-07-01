@@ -1,24 +1,89 @@
 import argparse
-import time
+import time, os
 from pathlib import Path
 
 import cv2
+import requests
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
+import numpy as np
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
-from utils.general import check_img_size, non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, \
-    strip_optimizer, set_logging, increment_path
-from utils.plots import plot_one_box
+from utils.general import (
+    check_img_size,
+    non_max_suppression,
+    apply_classifier,
+    scale_coords,
+    xyxy2xywh,
+    strip_optimizer,
+    set_logging,
+    increment_path,
+)
+from utils.plots import plot_one_box, plot_graph_tables
 from utils.torch_utils import select_device, load_classifier, time_synchronized
+from utils.datasets import letterbox
+
+from utility import mysql_handler as mysql
+from utility import general_utils as utils
+from utility import imgproc_utils as img_utils
+
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
+_this_folder_ = os.path.dirname(os.path.abspath(__file__))
+_this_basename_ = os.path.splitext(os.path.basename(__file__))[0]
 
 
-def detect(save_img=False):
-    source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
-    webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
-        ('rtsp://', 'rtmp://', 'http://'))
+def url_to_image(url, color_fmt="BGR"):
+    s = requests.Session()
+    retries = Retry(total=100, backoff_factor=1, status_forcelist=[502, 503, 504])
+    s.mount("https://", HTTPAdapter(max_retries=retries))
+
+    bytes = bytearray(s.get(url).content)
+    np_img = np.asarray(bytes, dtype=np.uint8)
+
+    if color_fmt == "BGR":
+        img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+    elif color_fmt == "TRANS":  # transparency
+        img = cv2.imdecode(np_img, cv2.IMREAD_UNCHANGED)
+
+    img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+    img = np.ascontiguousarray(img)
+
+    return img
+
+
+def detect(ini, save_img=False, img_size=640):
+
+    source, weights, view_img, save_txt, imgsz = (
+        opt.source,
+        opt.weights,
+        opt.view_img,
+        opt.save_txt,
+        opt.img_size,
+    )
+
+    logger = utils.setup_logger_with_ini(ini["LOGGER"])
+
+    DB = False
+
+    if source == "DB":
+
+        DB = True
+
+        db = mysql.MysqlHandler(
+            ini["MYSQL"]["user_name"],
+            ini["MYSQL"]["password"],
+            hostname=ini["MYSQL"]["host_name"],
+            database=ini["MYSQL"]["db_name"],
+        )
+
+        query = f"select id, CONCAT('{str(ini['AWS_S3']['url'])}', url, 'problem.png') from {str(ini['MYSQL']['table_name'])}"
+
+        img_urls = db.execute(query)
+        img_urls = sorted(img_urls, key=lambda x: x[0])
 
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
@@ -43,10 +108,118 @@ def detect(save_img=False):
 
     # Set Dataloader
     vid_path, vid_writer = None, None
-    if webcam:
-        view_img = True
-        cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz)
+
+    if DB:
+
+        save_img = True
+
+        names = model.module.names if hasattr(model, "module") else model.names
+        colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
+
+        for idx, url in enumerate(img_urls):
+
+            ID, img_url = url
+
+            try:
+                logger.info(
+                    " [YOLO-GRAPH-TABLE] # Processing {} ({:d}/{:d})".format(
+                        img_url, (idx + 1), len(img_urls)
+                    )
+                )
+
+                rst_path = opt.project
+                time_arr = [time.time()]
+
+                res = requests.get(img_url, stream=True).raw
+                img = np.asarray(bytearray(res.read()), dtype="uint8")
+                img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+
+                im0 = img
+
+                gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+                # Padded resize
+                img = letterbox(img, new_shape=img_size)[0]
+
+                # Convert
+                img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+                img = np.ascontiguousarray(img)
+
+                img = torch.from_numpy(img).to(device)
+
+                img = img.half() if half else img.float()  # uint8 to fp16/32
+                img /= 255.0  # 0 - 255 to 0.0 - 1.0
+
+                if img.ndimension() == 3:
+                    img = img.unsqueeze(0)
+
+                # Inference
+                t1 = time_synchronized()
+                pred = model(img, augment=opt.augment)[0]
+
+                # Apply NMS
+                pred = non_max_suppression(
+                    pred,
+                    opt.conf_thres,
+                    opt.iou_thres,
+                    classes=opt.classes,
+                    agnostic=opt.agnostic_nms,
+                )
+                t2 = time_synchronized()
+
+                if len(pred[0]) == 0:
+                    continue  # graph나 table이 없으면 넘어감
+                # Process detections
+                for i, det in enumerate(pred):  # detections per image
+
+                    # p, s, im0 = Path(path), '', im0s
+
+                    if len(det):
+                        # Rescale boxes from img_size to im0 size
+                        det[:, :4] = scale_coords(
+                            img.shape[2:], det[:, :4], im0.shape
+                        ).round()
+
+                        # Write results
+                        for *xyxy, conf, cls in reversed(det):
+                            if save_txt:  # Write to file
+                                xywh = (
+                                    (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn)
+                                    .view(-1)
+                                    .tolist()
+                                )  # normalized xywh
+                                line = (
+                                    (cls, *xywh, conf)
+                                    if opt.save_conf
+                                    else (cls, *xywh)
+                                )  # label format
+
+                            if save_img or view_img:  # Add bbox to image
+                                label = "%s %.2f" % (names[int(cls)], conf)
+                                # plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                                im1 = plot_graph_tables(xyxy, im0)
+
+                                save_path = str(
+                                    save_dir / Path(str(ID) + "_" + label + ".png")
+                                )
+
+                                cv2.imwrite(save_path, im1)
+
+                                logger.info(" # Saved image at {}".format(save_path))
+                                logger.info(
+                                    " [YOLO-GRAPH-TABLE] # Done {:d}/{:d}-th frame".format(
+                                        idx + 1, len(img_urls)
+                                    )
+                                )
+
+            except:
+
+                logger.info(
+                    " [YOLO-GRAPH-TABLE] # Unable to access {} ({:d}/{:d})".format(
+                        img_url, (idx + 1), len(img_urls)
+                    )
+                )
+                pass
+
     else:
         save_img = True
         dataset = LoadImages(source, img_size=imgsz)
@@ -163,10 +336,10 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     print(opt)
 
+    ini_fname = _this_basename_ + ".ini"
+
+    ini = utils.get_ini_parameters(ini_fname)
+
     with torch.no_grad():
-        if opt.update:  # update all models (to fix SourceChangeWarning)
-            for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                detect()
-                strip_optimizer(opt.weights)
-        else:
-            detect()
+
+        detect(ini)
