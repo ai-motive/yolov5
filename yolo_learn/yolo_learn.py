@@ -503,7 +503,7 @@ def parse_arguments(argv):
 
 SELF_TEST_ = True
 OBJ_TYPE = ObjType.TOTAL.name.lower()  # problem / graph / graph_table / total
-OP_MODE = OpMode.TRAIN_TEST.name
+OP_MODE = OpMode.PROCESS_ALL.name
 # PROCESS_ALL
 # (GENERATE / SPLIT / MERGE) / TRAIN_TEST (CROP은 별도의 기능)
 
