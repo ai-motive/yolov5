@@ -336,8 +336,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         def img2label_paths(img_paths):
             # Define label paths as a function of image paths
-            sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
-            return [x.replace(sa, sb, 1).replace('.' + x.split('.')[-1], '.txt') for x in img_paths]
+            # sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
+            # sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
+            # return [x.replace(sa, sb, 1).replace('.' + x.split('.')[-1], '.txt') for x in img_paths]
+
+            # for mathflat dataset
+            return [x.replace('img', 'yolov5_total_gt').replace('.jpg', '.txt') for x in img_paths]
 
         try:
             f = []  # image files
@@ -414,9 +418,14 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         for i, file in pbar:
             l = self.labels[i]  # label
             if l is not None and l.shape[0]:
-                assert l.shape[1] == 5, '> 5 label columns: %s' % file
-                assert (l >= 0).all(), 'negative labels: %s' % file
-                assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels: %s' % file
+                try:
+                    assert l.shape[1] == 5, '> 5 label columns: %s' % file
+                    assert (l >= 0).all(), 'negative labels: %s' % file
+                    assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels: %s' % file
+                except AssertionError as e:
+                    print(e)
+                    continue
+
                 if np.unique(l, axis=0).shape[0] < l.shape[0]:  # duplicate rows
                     nd += 1  # print('WARNING: duplicate rows in %s' % self.label_files[i])  # duplicate rows
                 if single_cls:
