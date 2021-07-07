@@ -91,17 +91,17 @@ def main_crop(ini, common_info, logger=None):
 
     cg.folder_exists(ini['img_path'], create_=True)
 
-    raw_path = os.path.join(_project_folder_, ini['raw_path'])
+    img_path = os.path.join(_project_folder_, ini['img_path'])
     ann_path = os.path.join(_project_folder_, ini['ann_path'])
-    raw_fnames = sorted(cg.get_filenames(raw_path, extensions=ig.IMG_EXTENSIONS))
+    img_fnames = sorted(cg.get_filenames(img_path, extensions=ig.IMG_EXTENSIONS))
     ann_fnames = sorted(cg.get_filenames(ann_path, extensions=jg.META_EXTENSION))
-    logger.info(" [CROP] # Total file number to be processed: {:d}.".format(len(raw_fnames)))
+    logger.info(" [CROP] # Total file number to be processed: {:d}.".format(len(img_fnames)))
 
-    for idx, raw_fname in enumerate(raw_fnames):
-        logger.info(" [CROP] # Processing {} ({:d}/{:d})".format(raw_fname, (idx + 1), len(raw_fnames)))
+    for idx, img_fname in enumerate(img_fnames):
+        logger.info(" [CROP] # Processing {} ({:d}/{:d})".format(img_fname, (idx + 1), len(img_fnames)))
 
-        _, raw_core_name, raw_ext = cg.split_fname(raw_fname)
-        img = ig.imread(raw_fname, color_fmt='RGB')
+        _, raw_core_name, raw_ext = cg.split_fname(img_fname)
+        img = ig.imread(img_fname, color_fmt='RGB')
 
         # Load json
         ann_fname = ann_fnames[idx]
@@ -127,7 +127,7 @@ def main_crop(ini, common_info, logger=None):
             try:
                 crop_img = img[y_min:y_max, x_min:x_max]
             except TypeError:
-                logger.error(" [CROP] # Crop error : {}".format(raw_fname))
+                logger.error(" [CROP] # Crop error : {}".format(img_fname))
                 logger.error(" [CROP] # Error pos : {}, {}, {}, {}".format(x_min, x_max, y_min, y_max))
                 pass
 
@@ -149,64 +149,69 @@ def main_generate(ini, common_info, logger=None):
     label_path = os.path.join(_project_folder_, vars['label_path'])
     cg.folder_exists(label_path, create_=True)
 
-    raw_path = os.path.join(_project_folder_, vars['raw_path'])
+    img_path = os.path.join(_project_folder_, vars['img_path'])
     ann_path = os.path.join(_project_folder_, vars['ann_path'])
-    raw_fnames = sorted(cg.get_filenames(raw_path, extensions=ig.IMG_EXTENSIONS))
+    label_path = os.path.join(_project_folder_, vars['label_path'])
+    img_fnames = sorted(cg.get_filenames(img_path, extensions=ig.IMG_EXTENSIONS))
     ann_fnames = sorted(cg.get_filenames(ann_path, extensions=jg.META_EXTENSION))
-    logger.info(" [GENERATE] # Total file number to be processed: {:d}.".format(len(raw_fnames)))
+    label_fnames = sorted(cg.get_filenames(label_path, extensions=cg.TEXT_EXTENSIONS))
 
-    for idx, raw_fname in enumerate(raw_fnames):
-        _, raw_core_name, raw_ext = cg.split_fname(raw_fname)
+    label_ = len(ann_fnames) != len(label_fnames)
+    if label_:
+        for idx, img_fname in enumerate(img_fnames):
+            _, raw_core_name, raw_ext = cg.split_fname(img_fname)
 
-        img = ig.imread(raw_fname, color_fmt='RGB')
+            img = ig.imread(img_fname, color_fmt='RGB')
 
-        h, w, c = img.shape
+            h, w, c = img.shape
 
-        # Load json
-        ann_fname = ann_fnames[idx]
+            # Load json
+            ann_fname = ann_fnames[idx]
 
-        _, ann_core_name, _ = cg.split_fname(ann_fname)
-        if ann_core_name == raw_core_name + raw_ext:
-            with open(ann_fname) as json_file:
-                json_data = json.load(json_file)
-                objects = json_data['objects']
-                # pprint.pprint(objects)
+            _, ann_core_name, _ = cg.split_fname(ann_fname)
+            if ann_core_name == raw_core_name + raw_ext:
+                with open(ann_fname) as json_file:
+                    json_data = json.load(json_file)
+                    objects = json_data['objects']
+                    # pprint.pprint(objects)
 
-        # Extract crop position
-        obj_names = common_info['obj_names'].replace(' ', '').split(',')
-        obj_type = common_info['obj_type']
+            # Extract crop position
+            obj_names = common_info['obj_names'].replace(' ', '').split(',')
+            obj_type = common_info['obj_type']
 
-        labels = []
-        for obj in objects:
-            obj_name = obj['classTitle']
+            labels = []
+            for obj in objects:
+                obj_name = obj['classTitle']
 
-            if obj_name not in obj_names:
-                continue
+                if obj_name not in obj_names:
+                    continue
 
-            class_num = ObjInfo(obj_type, obj_name).get_class_number()
+                class_num = ObjInfo(obj_type, obj_name).get_class_number()
 
-            [x1, y1], [x2, y2] = obj['points']['exterior']
-            x_min, y_min, x_max, y_max = int(min(x1, x2)), int(min(y1, y2)), int(max(x1, x2)), int(max(y1, y2))
-            if x_max - x_min <= 0 or y_max - y_min <= 0:
-                continue
+                [x1, y1], [x2, y2] = obj['points']['exterior']
+                x_min, y_min, x_max, y_max = int(min(x1, x2)), int(min(y1, y2)), int(max(x1, x2)), int(max(y1, y2))
+                if x_max - x_min <= 0 or y_max - y_min <= 0:
+                    continue
 
-            class_no, x_center, y_center, width, height = \
-                str(class_num), str(((x_max + x_min) / 2) / w), str(((y_max + y_min) / 2) / h), str((x_max - x_min) / w), str((y_max - y_min) / h)
+                class_no, x_center, y_center, width, height = \
+                    str(class_num), str(((x_max + x_min) / 2) / w), str(((y_max + y_min) / 2) / h), str((x_max - x_min) / w), str((y_max - y_min) / h)
 
-            label = "{} {} {} {} {}\r\n".format(class_no, x_center, y_center, width, height)
-            labels.append(label)
+                label = "{} {} {} {} {}\r\n".format(class_no, x_center, y_center, width, height)
+                labels.append(label)
 
-        # Save object info to COCO format
-        rst_fpath = os.path.join(_project_folder_, vars['label_path'] + raw_core_name + '.txt')
+            # Save object info to COCO format
+            rst_fpath = os.path.join(label_path, raw_core_name + '.txt')
 
-        if cg.file_exists(rst_fpath):
-            logger.info(" [GENERATE] # File already exist {} ({:d}/{:d})".format(rst_fpath, (idx + 1), len(raw_fnames)))
-        else:
-            with open(rst_fpath, 'w', encoding='utf8') as f:
-                for label in labels:
-                    f.write("{}\n".format(label))
+            if cg.file_exists(rst_fpath):
+                logger.info(" [GENERATE] # File already exist {} ({:d}/{:d})".format(rst_fpath, (idx + 1), len(img_fnames)))
+            else:
+                with open(rst_fpath, 'w', encoding='utf8') as f:
+                    for label in labels:
+                        f.write("{}".format(label))
 
-            logger.info(" [GENERATE] # File is saved {} ({:d}/{:d})".format(rst_fpath, (idx + 1), len(raw_fnames)))
+                logger.info(" [GENERATE] # File is saved {} ({:d}/{:d})".format(rst_fpath, (idx + 1), len(img_fnames)))
+    else:
+        logger.info(" [GENERATE] # All files already exist {} ({:d})".format(label_path, len(label_fnames)))
 
     logger.info(" # {} in {} mode finished.".format(_this_basename_, OP_MODE))
     return True
@@ -242,7 +247,8 @@ def main_split(ini, common_info, logger=None):
     # Apply symbolic link for gt & img path
     dst_train_img_fpaths, dst_test_img_fpaths = cg.get_filenames(dst_train_img_dirpath, extensions=ig.IMG_EXTENSIONS), cg.get_filenames(dst_test_img_dirpath, extensions=ig.IMG_EXTENSIONS)
     dst_train_gt_fpaths, dst_test_gt_fpaths = cg.get_filenames(dst_train_gt_dirpath, extensions=cg.TEXT_EXTENSIONS), cg.get_filenames(dst_test_gt_dirpath, extensions=cg.TEXT_EXTENSIONS)
-    link_img_, link_gt_ = (len(dst_train_img_fpaths) == 0 and len(dst_test_img_fpaths) == 0), (len(dst_train_gt_fpaths) == 0 and len(dst_test_gt_fpaths) == 0)
+    link_img_ = (len(src_train_img_fpaths) != len(dst_train_img_fpaths)) or (len(src_test_img_fpaths) != len(dst_test_img_fpaths))
+    link_gt_  = (len(src_train_gt_fpaths) != len(dst_train_gt_fpaths)) or (len(src_test_gt_fpaths) != len(dst_test_gt_fpaths))
 
     for tgt_mode in list(TgtMode.__members__):
         if tgt_mode == TgtMode.TRAIN.name:
@@ -262,59 +268,54 @@ def main_split(ini, common_info, logger=None):
         # Link img files
         if link_img_:
             for src_img_fpath in src_img_fpaths:
-                sym_cmd = f'ln "{src_img_fpath}" "{dst_img_dirpath}"'
-                subprocess.call(sym_cmd, shell=True)
+                img_fname = os.path.basename(src_img_fpath)
+                dst_img_fpath = os.path.join(src_img_fpath, img_fname)
+                if cg.file_exists(dst_img_fpath):
+                    logger.info(f" # Linked img already exist !!! : {dst_img_fpath}")
+                    continue
+                else:
+                    sym_cmd = f'ln "{src_img_fpath}" "{dst_img_dirpath}"'  # can't use * : Argument list too long
+                    subprocess.call(sym_cmd, shell=True)
 
-            logger.info(" # Link img files {}\n{}->{}.".format(src_img_fpath, MARGIN, dst_img_dirpath))
+            logger.info(" # Linked img files {}\n{}->{}.".format(src_img_fpath, MARGIN, dst_img_dirpath))
         else:
-            logger.info(" # Link img already processed !!!")
+            logger.info(" # All linked img already exist !!!")
 
         # Link gt files
         if link_gt_:
             for src_gt_fpath in src_gt_fpaths:
-                sym_cmd = f'ln "{src_gt_fpath}" "{dst_gt_dirpath}"'
-                subprocess.call(sym_cmd, shell=True)
+                gt_fname = os.path.basename(src_gt_fpath)
+                dst_gt_fpath = os.path.join(src_gt_fpath, gt_fname)
+                if cg.file_exists(dst_gt_fpath):
+                    logger.info(f" # Linked gt already exist !!! : {dst_gt_fpath}")
+                    continue
+                else:
+                    sym_cmd = f'ln "{src_gt_fpath}" "{dst_gt_dirpath}"'  # can't use * : Argument list too long
+                    subprocess.call(sym_cmd, shell=True)
 
-            logger.info(" # Link gt files {}\n{}->{}.".format(src_gt_fpath, MARGIN, dst_gt_dirpath))
+            logger.info(" # Linked gt files {}\n{}->{}.".format(src_gt_fpath, MARGIN, dst_gt_dirpath))
         else:
-            logger.info(" # Link gt already processed !!!")
+            logger.info(" # Linked gt already exist !!!")
 
     # Save train & test.txt file
     train_base_dirpath = os.path.join(vars['train_path'], base_dir_name)
     train_img_list_fpath = os.path.join(train_base_dirpath, 'img_list.txt')
+    train_img_fpaths = cg.get_filenames(dst_train_img_dirpath, extensions=ig.IMG_EXTENSIONS)
 
     with open(train_img_list_fpath, 'w') as f:
-        f.write('\n'.join(dst_train_img_fpaths) + '\n')
+        f.write('\n'.join(train_img_fpaths) + '\n')
 
     test_base_dirpath = os.path.join(vars['test_path'], base_dir_name)
     test_img_list_fpath = os.path.join(test_base_dirpath, 'img_list.txt')
+    test_img_fpaths = cg.get_filenames(dst_test_img_dirpath, extensions=ig.IMG_EXTENSIONS)
 
     with open(test_img_list_fpath, 'w') as f:
-        f.write('\n'.join(dst_test_img_fpaths) + '\n')
+        f.write('\n'.join(test_img_fpaths) + '\n')
 
     logger.info(f" [SPLIT] # Train : Test ratio -> {train_ratio * 100} % : {test_ratio * 100} %")
     logger.info(f" [SPLIT] # Train : Test size  -> {len(dst_train_img_fpaths)} : {len(dst_test_img_fpaths)}")
 
     return True
-
-    # # Modify yaml file
-    # ref_yaml_path = os.path.join(_project_folder_, vars['ref_yaml_path'])
-    # with open(ref_yaml_path, 'r') as f:
-    #     data = yaml.safe_load(f)
-    #
-    # data['train'] = os.path.join(_project_folder_, vars['train_path'])
-    # data['val'] = os.path.join(_project_folder_, vars['val_path'])
-    # data['names'] = common_info['obj_names'].replace(' ', '').split(',')
-    # data['nc'] = len(data['names'])
-    #
-    # # Save yaml file
-    # rst_yaml_path = os.path.join(_project_folder_, vars['rst_yaml_path'])
-    # with open(rst_yaml_path, 'w') as f:
-    #     yaml.dump(data, f)
-    #     pprint(data)
-    #
-    # logger.info(" # {} in {} mode finished.".format(_this_basename_, OP_MODE))
-    # return True
 
 
 def main_merge(ini, common_info, logger=None):
@@ -401,18 +402,14 @@ def main_merge(ini, common_info, logger=None):
         logger.info(" # Train img_list file paths : {}".format(train_img_list_fpaths))
         logger.info(" # Test img_list file paths : {}".format(test_img_list_fpaths))
 
-        # Merge all label files
-        with open(dst_train_img_list_fpath, 'w') as outfile:
-            for fpath in train_img_list_fpaths:
-                with open(fpath) as infile:
-                    for line in infile:
-                        outfile.write(line)
+        # Merge all train & test label files
+        concat_train_img_list_ = cg.concat_text_files(train_img_list_fpaths, dst_train_img_list_fpath)
+        if concat_train_img_list_:
+            logger.info(" # Concat train img_list file paths : {}".format(concat_train_img_list_))
 
-        with open(dst_test_img_list_fpath, 'w') as outfile:
-            for fpath in test_img_list_fpaths:
-                with open(fpath) as infile:
-                    for line in infile:
-                        outfile.write(line)
+        concat_test_img_list_ = cg.concat_text_files(test_img_list_fpaths, dst_test_img_list_fpath)
+        if concat_test_img_list_:
+            logger.info(" # Concat test img_list file paths : {}".format(concat_test_img_list_))
 
         logger.info(" # Train & Test gt files are merged !!!")
 
